@@ -25,9 +25,23 @@ import analytics_page
 import compute_page
 import constants
 
+import TWR
+
+
 jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
+# init our logger
+#logger = logging.getLogger()
+#logger.setLevel(logging.DEBUG)
+#hdlr = logging.FileHandler('apprtc.log', encoding='utf8')
+#formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+#hdlr.setFormatter(formatter)
+#logger.addHandler(hdlr) 
+
+# our iserver handler
+isrv = TWR.iServer()
+#isrv2 = TWR.iServer('192.168.100.177', 6101)
 
 def generate_random(length):
   word = ''
@@ -47,7 +61,7 @@ def make_pc_config(ice_transports):
   'iceServers': [],
   'bundlePolicy': 'max-bundle',
   'rtcpMuxPolicy': 'require'
-  };
+  }
   if ice_transports:
     config['iceTransports'] = ice_transports
   return config
@@ -102,7 +116,7 @@ def maybe_add_constraint(constraints, param, constraint):
   return constraints
 
 def make_pc_constraints(dtls, dscp, ipv6):
-  constraints = {'optional': []};
+  constraints = {'optional': []}
   maybe_add_constraint(constraints, dtls, 'DtlsSrtpKeyAgreement')
   maybe_add_constraint(constraints, dscp, 'googDscp')
   maybe_add_constraint(constraints, ipv6, 'googIPv6')
@@ -290,13 +304,14 @@ def get_room_parameters(request, room_id, client_id, is_initiator):
 
   pc_config = make_pc_config(ice_transports)
   pc_constraints = make_pc_constraints(dtls, dscp, ipv6)
-  offer_options = {};
+  offer_options = {}
   media_constraints = make_media_stream_constraints(audio, video,
                                                     firefox_fake_device)
   wss_url, wss_post_url = get_wss_parameters(request)
 
   bypass_join_confirmation = 'BYPASS_JOIN_CONFIRMATION' in os.environ and \
       os.environ['BYPASS_JOIN_CONFIRMATION'] == 'True'
+  #bypass_join_confirmation = 'True'
 
   params = {
     'error_messages': error_messages,
@@ -492,6 +507,12 @@ class LeavePage(webapp2.RequestHandler):
         self.request.host_url, room_id, client_id)
     if result['error'] is None:
       logging.info('Room ' + room_id + ' has state ' + result['room_state'])
+      
+      logging.info('Notifying iServer(240) with leaving user : ' + client_id +  ', roomid: ' + room_id)
+      # tell iserver that there is a user entering the room
+      isrv.user_leave_concall(client_id, room_id)
+      #logging.info('Notifying iServer(177) with leaving user : ' + client_id +  ', roomid: ' + room_id)
+      #isrv2.user_leave_concall(client_id, room_id)
 
 class MessagePage(webapp2.RequestHandler):
   def write_response(self, result):
@@ -546,19 +567,32 @@ class JoinPage(webapp2.RequestHandler):
     self.write_response('SUCCESS', params, messages)
 
   def post(self, room_id):
-    client_id = generate_random(8)
-    is_loopback = self.request.get('debug') == 'loopback'
-    result = add_client_to_room(self.request, room_id, client_id, is_loopback)
-    if result['error'] is not None:
-      logging.info('Error adding client to room: ' + result['error'] + \
-          ', room_state=' + result['room_state'])
-      self.write_response(result['error'], {}, [])
-      return
+    # our client_id will come from the join post parameters
+    #client_id = generate_random(8)
+    client_id = self.request.get('cid')
 
-    self.write_room_parameters(
-        room_id, client_id, result['messages'], result['is_initiator'])
-    logging.info('User ' + client_id + ' joined room ' + room_id)
-    logging.info('Room ' + room_id + ' has state ' + result['room_state'])
+    if not client_id:
+      self.write_response('No user information.', {}, [])
+    else:
+      # tell iserver that there is a user entering the room
+      logging.info('Notifying iServer(240) with joining user : ' + client_id +  ', roomid: ' + room_id)
+      isrv.user_enter_concall(client_id, room_id)
+
+      #logging.info('Notifying iServer(177) with joining user : ' + client_id +  ', roomid: ' + room_id)
+      #isrv2.user_enter_concall(client_id, room_id)
+
+      is_loopback = self.request.get('debug') == 'loopback'
+      result = add_client_to_room(self.request, room_id, client_id, is_loopback)
+      if result['error'] is not None:
+        logging.info('Error adding client to room: ' + result['error'] + \
+            ', room_state=' + result['room_state'])
+        self.write_response(result['error'], {}, [])
+        return
+
+      self.write_room_parameters(
+          room_id, client_id, result['messages'], result['is_initiator'])
+      logging.info('User ' + client_id + ' joined room ' + room_id)
+      logging.info('Room ' + room_id + ' has state ' + result['room_state'])
 
 class MainPage(webapp2.RequestHandler):
   def write_response(self, target_page, params={}):
@@ -568,7 +602,7 @@ class MainPage(webapp2.RequestHandler):
 
   def get(self):
     """Renders index.html."""
-    checkIfRedirect(self);
+    checkIfRedirect(self)
     # Parse out parameters from request.
     params = get_room_parameters(self.request, None, None, None)
     # room_id/room_link will not be included in the returned parameters
@@ -584,6 +618,18 @@ class RoomPage(webapp2.RequestHandler):
   def get(self, room_id):
     """Renders index.html or full.html."""
     checkIfRedirect(self)
+
+    # check whether the incoming user is valid
+    cid = self.request.get('cid')
+    if(not cid):  # we have to check with iserver later
+      params = {
+        'msg': 'No User Information'
+      }
+      self.write_response('error_template.html', params)
+      return
+    else:
+      logging.info('Incoming user, id: ' + cid)
+
     # Check if room is full.
     room = memcache.get(
         get_memcache_key_for_room(self.request.host_url, room_id))

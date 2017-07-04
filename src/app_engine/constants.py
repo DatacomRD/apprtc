@@ -97,3 +97,9 @@ BIGQUERY_DATASET_LOCAL = 'dev'
 
 # BigQuery table within the dataset.
 BIGQUERY_TABLE = 'analytics'
+
+#iServer information
+#ISERVER_IP = "192.168.100.66"
+ISERVER_IP = "192.168.1.240"
+#ISERVER_IP = "192.168.100.99"
+ISERVER_PORT = 6101
