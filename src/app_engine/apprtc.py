@@ -26,18 +26,28 @@ import compute_page
 import constants
 
 import TWR
-
+import os
 
 jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
+# GAE doesn't support file system access =.= 
+# Google Clound logging please refer:
+# 1. https://medium.com/google-cloud/cloud-logging-though-a-python-log-handler-a3fbeaf14704
+# 2. https://pypi.python.org/pypi/google-cloud-logging
+# 3. Enable Filesystem Writes in GAE Dev_appserver: http://rmosolgo.github.io/blog/2013/08/05/enable-filesystem-writes-in-gae-dev-appserver/
 # init our logger
-#logger = logging.getLogger()
-#logger.setLevel(logging.DEBUG)
-#hdlr = logging.FileHandler('apprtc.log', encoding='utf8')
-#formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-#hdlr.setFormatter(formatter)
-#logger.addHandler(hdlr) 
+# log_path = None
+# if os.name == 'nt':
+#   log_path = './apprtc.log'
+# else:
+#   log_path = '/var/tmp/apprtc.log'
+# logger = logging.getLogger()
+# hdlr = logging.FileHandler(log_path, encoding='utf8')
+# formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+# hdlr.setFormatter(formatter)
+# logger.setLevel(logging.DEBUG)
+# logger.addHandler(hdlr)   
 
 # our iserver handler
 isrv = TWR.iServer()
@@ -309,9 +319,9 @@ def get_room_parameters(request, room_id, client_id, is_initiator):
                                                     firefox_fake_device)
   wss_url, wss_post_url = get_wss_parameters(request)
 
-  bypass_join_confirmation = 'BYPASS_JOIN_CONFIRMATION' in os.environ and \
-      os.environ['BYPASS_JOIN_CONFIRMATION'] == 'True'
-  #bypass_join_confirmation = 'True'
+  #bypass_join_confirmation = 'BYPASS_JOIN_CONFIRMATION' in os.environ and \
+  #    os.environ['BYPASS_JOIN_CONFIRMATION'] == 'True'
+  bypass_join_confirmation = 'True'
 
   params = {
     'error_messages': error_messages,
