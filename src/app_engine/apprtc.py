@@ -319,9 +319,9 @@ def get_room_parameters(request, room_id, client_id, is_initiator):
                                                     firefox_fake_device)
   wss_url, wss_post_url = get_wss_parameters(request)
 
-  bypass_join_confirmation = 'BYPASS_JOIN_CONFIRMATION' in os.environ and \
-      os.environ['BYPASS_JOIN_CONFIRMATION'] == 'True'
-  #bypass_join_confirmation = 'True'
+  #bypass_join_confirmation = 'BYPASS_JOIN_CONFIRMATION' in os.environ and \
+  #    os.environ['BYPASS_JOIN_CONFIRMATION'] == 'True'
+  bypass_join_confirmation = 'True'
 
   params = {
     'error_messages': error_messages,
