@@ -10,7 +10,7 @@ import errno
 import constants
 
 
-PTN_ISERVER_COMMAND = '{}:{}:{}\r' # userid:command:params
+PTN_ISERVER_COMMAND = '{}:{}:{}\\r' # userid:command:params
 
 # the iServer Handler
 class iServer:
