@@ -566,6 +566,7 @@ Call.prototype.joinRoom_ = function() {
 };
 
 Call.prototype.onRecvSignalingChannelMessage_ = function(msg) {
+  trace('call.onRecvSignalingChannelMessage_ is called');
   this.maybeCreatePcClientAsync_()
       .then(this.pcClient_.receiveSignalingMessage(msg));
 };

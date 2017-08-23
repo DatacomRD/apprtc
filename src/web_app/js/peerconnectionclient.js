@@ -117,6 +117,7 @@ PeerConnectionClient.prototype.startAsCallee = function(initialMessages) {
     return false;
   }
 
+  console.log('Start ')
   this.isInitiator_ = false;
   this.setupCallstats_();
   this.started_ = true;
@@ -139,6 +140,7 @@ PeerConnectionClient.prototype.startAsCallee = function(initialMessages) {
 };
 
 PeerConnectionClient.prototype.receiveSignalingMessage = function(message) {
+  trace('PeerConnectionClient.receiveSignalingMessage is called');
   var messageObj = parseJSON(message);
   if (!messageObj) {
     return;
@@ -242,6 +244,7 @@ PeerConnectionClient.prototype.setRemoteSdp_ = function(message) {
   message.sdp = maybeSetVideoSendBitRate(message.sdp, this.params_);
   message.sdp = maybeSetVideoSendInitialBitRate(message.sdp, this.params_);
   message.sdp = maybeRemoveVideoFec(message.sdp, this.params_);
+  console.log('setting remote description');
   this.pc_.setRemoteDescription(new RTCSessionDescription(message))
       .then(this.onSetRemoteDescriptionSuccess_.bind(this))
       .catch(this.onError_.bind(this, 'setRemoteDescription'));
@@ -260,6 +263,7 @@ PeerConnectionClient.prototype.onSetRemoteDescriptionSuccess_ = function() {
 };
 
 PeerConnectionClient.prototype.processSignalingMessage_ = function(message) {
+  console.log('PeerConenctionClient.prcoessSignalingMessage, message.type = ' + message.type + ', isInitiator = ' + this.isInitiator_);
   if (message.type === 'offer' && !this.isInitiator_) {
     if (this.pc_.signalingState !== 'stable') {
       trace('ERROR: remote offer received in unexpected state: ' +
@@ -302,6 +306,7 @@ PeerConnectionClient.prototype.drainMessageQueue_ = function() {
   // candidates so we wait for the offer to arrive first if we're answering.
   // Offers are added to the front of the queue.
   if (!this.pc_ || !this.started_ || !this.hasRemoteSdp_) {
+    trace('Message coming before peer connection is created.');
     return;
   }
   for (var i = 0, len = this.messageQueue_.length; i < len; i++) {
@@ -394,6 +399,7 @@ PeerConnectionClient.prototype.onRemoteStreamAdded_ = function(event) {
 };
 
 PeerConnectionClient.prototype.onError_ = function(tag, error) {
+  console.log('PeerConnectionClient.onError_');
   if (this.onerror) {
     this.onerror(tag + ': ' + error.toString());
     this.reportErrorToCallstats(tag, error);

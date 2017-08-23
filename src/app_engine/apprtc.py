@@ -518,7 +518,7 @@ class LeavePage(webapp2.RequestHandler):
     if result['error'] is None:
       logging.info('Room ' + room_id + ' has state ' + result['room_state'])
       
-      logging.info('Notifying iServer(240) with leaving user : ' + client_id +  ', roomid: ' + room_id)
+      logging.info('Notifying iServer with leaving user : ' + client_id +  ', roomid: ' + room_id)
       # tell iserver that there is a user entering the room
       isrv.user_leave_concall(client_id, room_id)
       #logging.info('Notifying iServer(177) with leaving user : ' + client_id +  ', roomid: ' + room_id)
@@ -585,7 +585,7 @@ class JoinPage(webapp2.RequestHandler):
       self.write_response('No user information.', {}, [])
     else:
       # tell iserver that there is a user entering the room
-      logging.info('Notifying iServer(240) with joining user : ' + client_id +  ', roomid: ' + room_id)
+      logging.info('Notifying iServerwith joining user : ' + client_id +  ', roomid: ' + room_id)
       isrv.user_enter_concall(client_id, room_id)
 
       #logging.info('Notifying iServer(177) with joining user : ' + client_id +  ', roomid: ' + room_id)
