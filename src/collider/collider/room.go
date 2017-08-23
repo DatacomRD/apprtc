@@ -84,12 +84,14 @@ func (rm *room) send(srcClientID string, msg string) error {
 
 	// Queue the message if the other client has not joined.
 	if len(rm.clients) == 1 {
+		log.Printf("Enqueue the message in client %s", srcClientID)
 		return rm.clients[srcClientID].enqueue(msg)
 	}
 
 	// Send the message to the other client of the room.
 	for _, oc := range rm.clients {
 		if oc.id != srcClientID {
+			log.Printf("Send the incoming message from %s to %s", srcClientID, oc.id)
 			return src.send(oc, msg)
 		}
 	}

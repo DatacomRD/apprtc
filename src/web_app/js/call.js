@@ -469,21 +469,23 @@ Call.prototype.maybeCreatePcClientAsync_ = function() {
       return;
     }
 
+    this.createPcClient_(); // create first to prevent StartSingnaling & onRecvSignalingChannelMessage_  call this function at the same time
     if (typeof RTCPeerConnection.generateCertificate === 'function') {
       var certParams = {name: 'ECDSA', namedCurve: 'P-256'};
       RTCPeerConnection.generateCertificate(certParams)
           .then(function(cert) {
             trace('ECDSA certificate generated successfully.');
             this.params_.peerConnectionConfig.certificates = [cert];
-            this.createPcClient_();
+            //this.createPcClient_();
             resolve();
           }.bind(this))
           .catch(function(error) {
             trace('ECDSA certificate generation failed.');
+            this.pcClient_ = null;  // we reset the pcClient to null if cert. generated error.
             reject(error);
           });
     } else {
-      this.createPcClient_();
+      //this.createPcClient_();
       resolve();
     }
   }.bind(this));
@@ -566,6 +568,7 @@ Call.prototype.joinRoom_ = function() {
 };
 
 Call.prototype.onRecvSignalingChannelMessage_ = function(msg) {
+  trace('call.onRecvSignalingChannelMessage_ is called');
   this.maybeCreatePcClientAsync_()
       .then(this.pcClient_.receiveSignalingMessage(msg));
 };
